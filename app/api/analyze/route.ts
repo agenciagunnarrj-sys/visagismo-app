@@ -93,7 +93,7 @@ If no face is visible, return: {"erro": "Não foi possível identificar um rosto
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error("No JSON found in response:", text);
-      return NextResponse.json({ erro: "A IA não retornou uma análise válida. Tente novamente com outra foto." }, { status: 500 });
+      return NextResponse.json({ erro: `IA retornou: ${text.slice(0, 300)}` }, { status: 500 });
     }
 
     const result = JSON.parse(jsonMatch[0]);
