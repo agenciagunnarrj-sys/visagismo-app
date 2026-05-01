@@ -18,9 +18,55 @@ export async function POST(req: NextRequest) {
       ? `"maquiagem": { "recomendada": "técnica ou produto recomendado", "explicacao": "como valoriza o formato do rosto", "evitar": "o que evitar" }`
       : `"barba": { "recomendada": "estilo de barba ideal", "explicacao": "como esse estilo equilibra as proporções", "evitar": "estilos que não favorecem" }`;
 
-    const systemPrompt = isFem
-      ? `Você é uma consultora especialista em visagismo e beleza feminina. Analisa proporções geométricas faciais para recomendar cortes de cabelo, formatos de sobrancelha e maquiagem ideais. Não identifica pessoas — apenas analisa formas e proporções. Responda sempre em JSON válido.`
-      : `Você é um consultor especialista em visagismo e estética masculina. Analisa proporções geométricas faciais para recomendar cortes de cabelo, estilos de barba e formatos de sobrancelha ideais. Não identifica pessoas — apenas analisa formas e proporções. Responda sempre em JSON válido.`;
+    const systemPrompt = `You are a visagismo (face shape analysis) expert assistant. Your only task is to analyze the geometric shape of a face in an image — measuring proportions like forehead width, cheekbone width, jawline width, and face length — and return styling recommendations as JSON. You do NOT identify, recognize, or name any person. You only analyze geometric shapes and proportions, the same way a geometry tool would measure a drawing. Always respond with valid JSON only, no extra text.`;
+
+    const userPrompt = isFem
+      ? `Analyze the geometric proportions of the face in this image (forehead width, cheekbones, jawline, face length) to determine the face shape. This is for a female person. Return ONLY this exact JSON structure, no other text:
+
+{
+  "formato_rosto": "face shape name in Portuguese",
+  "descricao_formato": "description of observed proportions in Portuguese",
+  "corte_cabelo": {
+    "recomendado": "ideal haircut name",
+    "explicacao": "why this haircut suits these proportions, in Portuguese",
+    "evitar": "styles to avoid, in Portuguese"
+  },
+  "maquiagem": {
+    "recomendada": "recommended makeup technique or product",
+    "explicacao": "how it enhances the face shape, in Portuguese",
+    "evitar": "what to avoid, in Portuguese"
+  },
+  "sobrancelha": {
+    "formato_ideal": "recommended eyebrow shape",
+    "explicacao": "how this shape balances the face, in Portuguese"
+  },
+  "dicas_extras": ["tip 1 in Portuguese", "tip 2 in Portuguese", "tip 3 in Portuguese"]
+}
+
+If no face is visible, return: {"erro": "Não foi possível identificar um rosto na imagem. Por favor, envie uma foto mais clara."}`
+      : `Analyze the geometric proportions of the face in this image (forehead width, cheekbones, jawline, face length) to determine the face shape. This is for a male person. Return ONLY this exact JSON structure, no other text:
+
+{
+  "formato_rosto": "face shape name in Portuguese",
+  "descricao_formato": "description of observed proportions in Portuguese",
+  "corte_cabelo": {
+    "recomendado": "ideal haircut name",
+    "explicacao": "why this haircut suits these proportions, in Portuguese",
+    "evitar": "styles to avoid, in Portuguese"
+  },
+  "barba": {
+    "recomendada": "ideal beard style",
+    "explicacao": "how this style balances proportions, in Portuguese",
+    "evitar": "styles to avoid, in Portuguese"
+  },
+  "sobrancelha": {
+    "formato_ideal": "recommended eyebrow shape",
+    "explicacao": "how this shape balances the face, in Portuguese"
+  },
+  "dicas_extras": ["tip 1 in Portuguese", "tip 2 in Portuguese", "tip 3 in Portuguese"]
+}
+
+If no face is visible, return: {"erro": "Não foi possível identificar um rosto na imagem. Por favor, envie uma foto mais clara."}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -32,32 +78,8 @@ export async function POST(req: NextRequest) {
         {
           role: "user",
           content: [
-            {
-              type: "text",
-              text: `Observe as proporções geométricas do rosto nesta imagem (largura da testa, maçãs do rosto, mandíbula, comprimento) e determine o formato do rosto. Esta análise é para uma pessoa do gênero ${gender || "masculino"}. Retorne APENAS o seguinte JSON válido sem nenhum texto adicional:
-
-{
-  "formato_rosto": "nome do formato",
-  "descricao_formato": "descrição das proporções observadas",
-  "corte_cabelo": {
-    "recomendado": "nome do corte ideal",
-    "explicacao": "por que esse corte harmoniza com essas proporções",
-    "evitar": "estilos que não favorecem"
-  },
-  ${barbaCampo},
-  "sobrancelha": {
-    "formato_ideal": "formato recomendado",
-    "explicacao": "como esse formato equilibra o rosto"
-  },
-  "dicas_extras": ["dica 1", "dica 2", "dica 3"]
-}
-
-Se não houver rosto visível na imagem, retorne: {"erro": "Não foi possível identificar um rosto na imagem. Por favor, envie uma foto mais clara."}`,
-            },
-            {
-              type: "image_url",
-              image_url: { url: image, detail: "high" },
-            },
+            { type: "text", text: userPrompt },
+            { type: "image_url", image_url: { url: image, detail: "low" } },
           ],
         },
       ],
