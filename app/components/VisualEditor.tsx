@@ -12,17 +12,17 @@ interface Recommendations {
 interface VisualEditorProps {
   originalImage: string;
   recommendations: Recommendations;
+  gender: "masculino" | "feminino";
 }
 
 type ActiveMap = { cabelo: boolean; barba: boolean; sobrancelha: boolean };
 
-const CHIPS = [
-  { key: "cabelo" as const, label: "Corte", icon: "✂️" },
-  { key: "barba" as const, label: "Barba", icon: "🧔" },
-  { key: "sobrancelha" as const, label: "Sobrancelha", icon: "〰️" },
-];
-
-export default function VisualEditor({ originalImage, recommendations }: VisualEditorProps) {
+export default function VisualEditor({ originalImage, recommendations, gender }: VisualEditorProps) {
+  const CHIPS = [
+    { key: "cabelo" as const, label: "Corte", icon: "✂️" },
+    { key: "barba" as const, label: gender === "feminino" ? "Maquiagem" : "Barba", icon: gender === "feminino" ? "💄" : "🧔" },
+    { key: "sobrancelha" as const, label: "Sobrancelha", icon: "〰️" },
+  ];
   const [active, setActive] = useState<ActiveMap>({ cabelo: true, barba: true, sobrancelha: true });
   const [loading, setLoading] = useState(false);
   const [editedImage, setEditedImage] = useState<string | null>(null);

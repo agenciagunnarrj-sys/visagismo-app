@@ -29,7 +29,12 @@ interface Analysis {
     explicacao: string;
     evitar: string;
   };
-  barba: {
+  barba?: {
+    recomendada: string;
+    explicacao: string;
+    evitar: string;
+  };
+  maquiagem?: {
     recomendada: string;
     explicacao: string;
     evitar: string;
@@ -75,16 +80,23 @@ export default function ResultCards({ data }: { data: Analysis }) {
         <Avoid text={data.corte_cabelo.evitar} />
       </Card>
 
-      {/* Barba */}
-      <Card icon={<BeardIcon />} title="Barba" accent="emerald">
-        <Recommendation
-          label="Recomendada"
-          value={data.barba.recomendada}
-          color="text-emerald-400"
-        />
-        <p className="text-sm text-zinc-400 mt-2">{data.barba.explicacao}</p>
-        <Avoid text={data.barba.evitar} />
-      </Card>
+      {/* Barba (masculino) */}
+      {data.barba && (
+        <Card icon={<BeardIcon />} title="Barba" accent="emerald">
+          <Recommendation label="Recomendada" value={data.barba.recomendada} color="text-emerald-400" />
+          <p className="text-sm text-zinc-400 mt-2">{data.barba.explicacao}</p>
+          <Avoid text={data.barba.evitar} />
+        </Card>
+      )}
+
+      {/* Maquiagem (feminino) */}
+      {data.maquiagem && (
+        <Card icon={<MakeupIcon />} title="Maquiagem" accent="emerald">
+          <Recommendation label="Recomendada" value={data.maquiagem.recomendada} color="text-emerald-400" />
+          <p className="text-sm text-zinc-400 mt-2">{data.maquiagem.explicacao}</p>
+          <Avoid text={data.maquiagem.evitar} />
+        </Card>
+      )}
 
       {/* Sobrancelha */}
       <Card icon={<BrowIcon />} title="Sobrancelha" accent="violet">
@@ -208,6 +220,16 @@ function StarIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb7185" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  );
+}
+
+function MakeupIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a5 5 0 0 1 5 5c0 3-5 11-5 11S7 10 7 7a5 5 0 0 1 5-5z"/>
+      <circle cx="12" cy="7" r="1.5" fill="#34d399"/>
+      <path d="M5 20c2-1 4-1.5 7-1.5s5 .5 7 1.5"/>
     </svg>
   );
 }

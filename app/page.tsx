@@ -6,23 +6,31 @@ import UploadArea from "./components/UploadArea";
 import ResultCards from "./components/ResultCards";
 import VisualEditor from "./components/VisualEditor";
 
-type State = "idle" | "loading" | "result" | "error";
+type State = "gender" | "idle" | "loading" | "result" | "error";
+type Gender = "masculino" | "feminino";
 
 interface Analysis {
   formato_rosto: string;
   descricao_formato: string;
   corte_cabelo: { recomendado: string; explicacao: string; evitar: string };
-  barba: { recomendada: string; explicacao: string; evitar: string };
+  barba?: { recomendada: string; explicacao: string; evitar: string };
+  maquiagem?: { recomendada: string; explicacao: string; evitar: string };
   sobrancelha: { formato_ideal: string; explicacao: string };
   dicas_extras: string[];
 }
 
 export default function Home() {
-  const [state, setState] = useState<State>("idle");
+  const [state, setState] = useState<State>("gender");
+  const [gender, setGender] = useState<Gender | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [result, setResult] = useState<Analysis | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  function selectGender(g: Gender) {
+    setGender(g);
+    setState("idle");
+  }
 
   async function handleImage(base64: string, previewUrl: string) {
     setPreview(previewUrl);
@@ -35,7 +43,7 @@ export default function Home() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64 }),
+        body: JSON.stringify({ image: base64, gender }),
       });
 
       const data = await res.json();
@@ -55,7 +63,8 @@ export default function Home() {
   }
 
   function reset() {
-    setState("idle");
+    setState("gender");
+    setGender(null);
     setPreview(null);
     setOriginalImage(null);
     setResult(null);
@@ -72,9 +81,33 @@ export default function Home() {
           </div>
           <h1 className="text-3xl font-bold text-zinc-100 mb-2">Análise de Rosto</h1>
           <p className="text-zinc-500 text-sm">
-            Envie uma foto e descubra o corte de cabelo, barba e sobrancelha ideais para o seu formato de rosto.
+            {state === "gender"
+              ? "Primeiro, selecione o seu gênero para recomendações personalizadas."
+              : "Envie uma foto e descubra o corte de cabelo, barba e sobrancelha ideais para o seu formato de rosto."}
           </p>
         </div>
+
+        {/* Gender selection */}
+        {state === "gender" && (
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex gap-4 w-full max-w-sm mx-auto">
+              <button
+                onClick={() => selectGender("masculino")}
+                className="flex-1 flex flex-col items-center gap-3 py-8 rounded-2xl border-2 border-zinc-700 hover:border-blue-400 hover:bg-blue-400/5 transition-all duration-200 cursor-pointer"
+              >
+                <span className="text-4xl">👨</span>
+                <span className="text-sm font-medium text-zinc-300">Masculino</span>
+              </button>
+              <button
+                onClick={() => selectGender("feminino")}
+                className="flex-1 flex flex-col items-center gap-3 py-8 rounded-2xl border-2 border-zinc-700 hover:border-pink-400 hover:bg-pink-400/5 transition-all duration-200 cursor-pointer"
+              >
+                <span className="text-4xl">👩</span>
+                <span className="text-sm font-medium text-zinc-300">Feminino</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Upload / Preview */}
         {state === "idle" && (
@@ -138,9 +171,10 @@ export default function Home() {
                 originalImage={originalImage}
                 recommendations={{
                   cabelo: result.corte_cabelo.recomendado,
-                  barba: result.barba.recomendada,
+                  barba: result.barba?.recomendada ?? result.maquiagem?.recomendada ?? "",
                   sobrancelha: result.sobrancelha.formato_ideal,
                 }}
+                gender={gender ?? "masculino"}
               />
             )}
           </div>
