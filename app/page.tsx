@@ -165,7 +165,7 @@ export default function Home() {
         {/* Results */}
         {state === "result" && result && (
           <div className="flex flex-col gap-4">
-            <ResultCards data={result} />
+            <ResultCards data={result} gender={gender ?? "masculino"} />
             {originalImage && (
               <VisualEditor
                 originalImage={originalImage}

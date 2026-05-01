@@ -2,23 +2,37 @@
 
 import Image from "next/image";
 
-// Maps AI-returned face shape names to local image files
-const FACE_SHAPE_IMAGES: Record<string, string> = {
-  redondo: "/face-shapes/redondo.jpg",
-  oval: "/face-shapes/reto.jpg",
-  retangular: "/face-shapes/reto.jpg",
-  reto: "/face-shapes/reto.jpg",
-  alongado: "/face-shapes/reto.jpg",
-  quadrado: "/face-shapes/quadrado.jpg",
-  quadrada: "/face-shapes/quadrado.jpg",
+type ShapeKey = "oval" | "oblong" | "square" | "inverted-triangle" | "diamond" | "round" | "heart" | "rectangle";
+
+const SHAPE_MAP: Record<string, ShapeKey> = {
+  oval: "oval",
+  oblong: "oblong",
+  alongado: "oblong",
+  retangular: "oblong",
+  quadrado: "square",
+  quadrada: "square",
+  square: "square",
+  invertido: "inverted-triangle",
+  "inverted triangle": "inverted-triangle",
+  triangulo: "inverted-triangle",
+  diamante: "diamond",
+  diamond: "diamond",
+  redondo: "round",
+  round: "round",
+  circular: "round",
+  coracao: "heart",
+  "heart-shaped": "heart",
+  retangulo: "rectangle",
+  rectangle: "rectangle",
 };
 
-function getFaceShapeImage(formato: string): string | null {
-  const key = formato.toLowerCase().trim();
-  for (const [k, v] of Object.entries(FACE_SHAPE_IMAGES)) {
-    if (key.includes(k)) return v;
+function getFaceShapeImage(formato: string, gender: "masculino" | "feminino"): string | null {
+  const key = formato.toLowerCase().trim().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const folder = gender === "feminino" ? "mulher" : "homem";
+  for (const [k, shape] of Object.entries(SHAPE_MAP)) {
+    if (key.includes(k)) return `/face-shapes/${folder}/${shape}.png`;
   }
-  return "/face-shapes/estilos.jpg";
+  return null;
 }
 
 interface Analysis {
@@ -46,7 +60,7 @@ interface Analysis {
   dicas_extras: string[];
 }
 
-export default function ResultCards({ data }: { data: Analysis }) {
+export default function ResultCards({ data, gender }: { data: Analysis; gender: "masculino" | "feminino" }) {
   return (
     <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto">
       {/* Formato do Rosto */}
@@ -56,10 +70,10 @@ export default function ResultCards({ data }: { data: Analysis }) {
             <p className="text-xl font-semibold text-amber-400">{data.formato_rosto}</p>
             <p className="text-sm text-zinc-400 mt-1">{data.descricao_formato}</p>
           </div>
-          {getFaceShapeImage(data.formato_rosto) && (
+          {getFaceShapeImage(data.formato_rosto, gender) && (
             <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-zinc-700">
               <Image
-                src={getFaceShapeImage(data.formato_rosto)!}
+                src={getFaceShapeImage(data.formato_rosto, gender)!}
                 alt={`Formato ${data.formato_rosto}`}
                 fill
                 className="object-cover"
