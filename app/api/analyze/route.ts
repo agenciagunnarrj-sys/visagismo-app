@@ -67,10 +67,14 @@ Se não houver rosto visível na imagem, retorne: {"erro": "Não foi possível i
     const text = response.choices[0]?.message?.content ?? "";
     console.log("GPT-4o raw response:", text);
 
-    // Strip markdown code blocks if present
-    const cleaned = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    // Extract JSON from response (handles markdown blocks and extra text)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("No JSON found in response:", text);
+      return NextResponse.json({ erro: "A IA não retornou uma análise válida. Tente novamente com outra foto." }, { status: 500 });
+    }
 
-    const result = JSON.parse(cleaned);
+    const result = JSON.parse(jsonMatch[0]);
     return NextResponse.json(result);
   } catch (err: unknown) {
     console.error("Analyze error:", err);
