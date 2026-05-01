@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI, { toFile } from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export const maxDuration = 60;
 
 interface EditRequest {
@@ -46,6 +44,7 @@ function buildPrompt(active: EditRequest["active"], rec: EditRequest["recommenda
 }
 
 export async function POST(req: NextRequest) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   try {
     const body: EditRequest = await req.json();
     const { image, active, recommendations } = body;
