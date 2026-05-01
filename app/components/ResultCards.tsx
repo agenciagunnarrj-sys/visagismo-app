@@ -57,6 +57,11 @@ interface Analysis {
     formato_ideal: string;
     explicacao: string;
   };
+  linha_perfil?: {
+    tipo: string;
+    descricao: string;
+    recomendacoes: string;
+  };
   dicas_extras: string[];
 }
 
@@ -122,6 +127,18 @@ export default function ResultCards({ data, gender }: { data: Analysis; gender: 
         <p className="text-sm text-zinc-400 mt-2">{data.sobrancelha.explicacao}</p>
       </Card>
 
+      {/* Linha de Perfil */}
+      {data.linha_perfil && (
+        <Card icon={<ProfileLineIcon />} title="Linha de Perfil" accent="sky">
+          <Recommendation label="Tipo" value={data.linha_perfil.tipo} color="text-sky-400" />
+          <p className="text-sm text-zinc-400 mt-2">{data.linha_perfil.descricao}</p>
+          <div className="mt-3 flex gap-2 items-start rounded-lg bg-zinc-800/60 px-3 py-2">
+            <span className="text-sky-400 text-xs font-bold uppercase tracking-wide shrink-0 mt-0.5">Recomendações:</span>
+            <span className="text-xs text-zinc-400">{data.linha_perfil.recomendacoes}</span>
+          </div>
+        </Card>
+      )}
+
       {/* Dicas Extras */}
       <Card icon={<StarIcon />} title="Dicas Extras" accent="rose">
         <ul className="flex flex-col gap-2 mt-1">
@@ -145,7 +162,7 @@ function Card({
 }: {
   icon: React.ReactNode;
   title: string;
-  accent: "amber" | "blue" | "emerald" | "violet" | "rose";
+  accent: "amber" | "blue" | "emerald" | "violet" | "rose" | "sky";
   children: React.ReactNode;
 }) {
   const border: Record<string, string> = {
@@ -154,6 +171,7 @@ function Card({
     emerald: "border-emerald-400/20",
     violet: "border-violet-400/20",
     rose: "border-rose-400/20",
+    sky: "border-sky-400/20",
   };
 
   return (
@@ -234,6 +252,15 @@ function StarIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb7185" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  );
+}
+
+function ProfileLineIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 4c-2 0-4 1-5 3-1 1.5-1 3-2 4.5C12 13 10 14 8 14c-2 0-3.5-1-4-3"/>
+      <circle cx="6" cy="18" r="2"/>
     </svg>
   );
 }

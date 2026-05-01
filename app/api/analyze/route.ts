@@ -1,95 +1,84 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   try {
     const body = await req.text();
-    const { image, gender } = JSON.parse(body);
+    const { image, profileImage, gender } = JSON.parse(body);
 
     if (!image) {
       return NextResponse.json({ erro: "Nenhuma imagem recebida." }, { status: 400 });
     }
 
     const isFem = gender === "feminino";
-    const barbaCampo = isFem
-      ? `"maquiagem": { "recomendada": "técnica ou produto recomendado", "explicacao": "como valoriza o formato do rosto", "evitar": "o que evitar" }`
-      : `"barba": { "recomendada": "estilo de barba ideal", "explicacao": "como esse estilo equilibra as proporções", "evitar": "estilos que não favorecem" }`;
 
-    const systemPrompt = `You are a visagismo (face shape analysis) expert assistant. Your only task is to analyze the geometric shape of a face in an image — measuring proportions like forehead width, cheekbone width, jawline width, and face length — and return styling recommendations as JSON. You do NOT identify, recognize, or name any person. You only analyze geometric shapes and proportions, the same way a geometry tool would measure a drawing. Always respond with valid JSON only, no extra text.`;
+    const systemPrompt = `You are a visagismo (face shape analysis) expert assistant. Your only task is to analyze the geometric shape of a face — measuring proportions like forehead width, cheekbone width, jawline width, face length, and profile line — and return styling recommendations as JSON. You do NOT identify, recognize, or name any person. You only analyze geometric shapes and proportions. Always respond with valid JSON only, no extra text.`;
 
-    const userPrompt = isFem
-      ? `Analyze the geometric proportions of the face in this image (forehead width, cheekbones, jawline, face length) to determine the face shape. This is for a female person. Return ONLY this exact JSON structure, no other text:
-
-{
-  "formato_rosto": "face shape name in Portuguese",
-  "descricao_formato": "description of observed proportions in Portuguese",
-  "corte_cabelo": {
-    "recomendado": "ideal haircut name",
-    "explicacao": "why this haircut suits these proportions, in Portuguese",
-    "evitar": "styles to avoid, in Portuguese"
-  },
-  "maquiagem": {
-    "recomendada": "recommended makeup technique or product",
+    const barbaCampoJson = isFem
+      ? `"maquiagem": {
+    "recomendada": "recommended makeup technique",
     "explicacao": "how it enhances the face shape, in Portuguese",
     "evitar": "what to avoid, in Portuguese"
-  },
-  "sobrancelha": {
-    "formato_ideal": "recommended eyebrow shape",
-    "explicacao": "how this shape balances the face, in Portuguese"
-  },
-  "dicas_extras": ["tip 1 in Portuguese", "tip 2 in Portuguese", "tip 3 in Portuguese"]
-}
-
-If no face is visible, return: {"erro": "Não foi possível identificar um rosto na imagem. Por favor, envie uma foto mais clara."}`
-      : `Analyze the geometric proportions of the face in this image (forehead width, cheekbones, jawline, face length) to determine the face shape. This is for a male person. Return ONLY this exact JSON structure, no other text:
-
-{
-  "formato_rosto": "face shape name in Portuguese",
-  "descricao_formato": "description of observed proportions in Portuguese",
-  "corte_cabelo": {
-    "recomendado": "ideal haircut name",
-    "explicacao": "why this haircut suits these proportions, in Portuguese",
-    "evitar": "styles to avoid, in Portuguese"
-  },
-  "barba": {
+  }`
+      : `"barba": {
     "recomendada": "ideal beard style",
     "explicacao": "how this style balances proportions, in Portuguese",
     "evitar": "styles to avoid, in Portuguese"
+  }`;
+
+    const profileSection = profileImage
+      ? `"linha_perfil": {
+    "tipo": "profile line type (côncavo, convexo, reto, etc) in Portuguese",
+    "descricao": "description of what was observed in the profile, in Portuguese",
+    "recomendacoes": "specific recommendations based on profile line, in Portuguese"
+  },`
+      : "";
+
+    const userPrompt = `You will receive ${profileImage ? "two images: first a frontal face photo, then a side profile photo" : "one frontal face photo"}. Analyze the geometric proportions to determine the face shape${profileImage ? " and profile line" : ""}. This is for a ${isFem ? "female" : "male"} person. Return ONLY this exact JSON, no other text:
+
+{
+  "formato_rosto": "face shape name in Portuguese",
+  "descricao_formato": "description of observed proportions in Portuguese",
+  "corte_cabelo": {
+    "recomendado": "ideal haircut name",
+    "explicacao": "why this haircut suits these proportions, in Portuguese",
+    "evitar": "styles to avoid, in Portuguese"
   },
+  ${barbaCampoJson},
   "sobrancelha": {
     "formato_ideal": "recommended eyebrow shape",
     "explicacao": "how this shape balances the face, in Portuguese"
   },
+  ${profileSection}
   "dicas_extras": ["tip 1 in Portuguese", "tip 2 in Portuguese", "tip 3 in Portuguese"]
 }
 
 If no face is visible, return: {"erro": "Não foi possível identificar um rosto na imagem. Por favor, envie uma foto mais clara."}`;
 
+    const imageContent: OpenAI.Chat.ChatCompletionContentPart[] = [
+      { type: "text", text: userPrompt },
+      { type: "image_url", image_url: { url: image, detail: "high" } },
+    ];
+
+    if (profileImage) {
+      imageContent.push({ type: "image_url", image_url: { url: profileImage, detail: "high" } });
+    }
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: userPrompt },
-            { type: "image_url", image_url: { url: image, detail: "high" } },
-          ],
-        },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: imageContent },
       ],
-      max_tokens: 1000,
+      max_tokens: 1200,
     });
 
     const text = response.choices[0]?.message?.content ?? "";
     console.log("GPT-4o raw response:", text);
 
-    // Extract JSON from response (handles markdown blocks and extra text)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error("No JSON found in response:", text);

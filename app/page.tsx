@@ -16,6 +16,7 @@ interface Analysis {
   barba?: { recomendada: string; explicacao: string; evitar: string };
   maquiagem?: { recomendada: string; explicacao: string; evitar: string };
   sobrancelha: { formato_ideal: string; explicacao: string };
+  linha_perfil?: { tipo: string; descricao: string; recomendacoes: string };
   dicas_extras: string[];
 }
 
@@ -23,6 +24,7 @@ export default function Home() {
   const [state, setState] = useState<State>("gender");
   const [gender, setGender] = useState<Gender | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [result, setResult] = useState<Analysis | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -32,9 +34,10 @@ export default function Home() {
     setState("idle");
   }
 
-  async function handleImage(base64: string, previewUrl: string) {
-    setPreview(previewUrl);
-    setOriginalImage(base64);
+  async function handleImages(front: string, profile: string, frontPreview: string, profPreview: string) {
+    setPreview(frontPreview);
+    setProfilePreview(profPreview);
+    setOriginalImage(front);
     setState("loading");
     setResult(null);
     setErrorMsg("");
@@ -43,7 +46,7 @@ export default function Home() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64, gender }),
+        body: JSON.stringify({ image: front, profileImage: profile, gender }),
       });
 
       const data = await res.json();
@@ -66,6 +69,7 @@ export default function Home() {
     setState("gender");
     setGender(null);
     setPreview(null);
+    setProfilePreview(null);
     setOriginalImage(null);
     setResult(null);
     setErrorMsg("");
@@ -111,13 +115,26 @@ export default function Home() {
 
         {/* Upload / Preview */}
         {state === "idle" && (
-          <UploadArea onImage={handleImage} />
+          <UploadArea onImages={handleImages} />
         )}
 
         {(state === "loading" || state === "result" || state === "error") && preview && (
           <div className="flex flex-col items-center gap-4 mb-6">
-            <div className="relative w-40 h-40 rounded-2xl overflow-hidden border-2 border-zinc-700">
-              <Image src={preview} alt="Foto enviada" fill className="object-cover" />
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center gap-1">
+                <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-zinc-700">
+                  <Image src={preview} alt="Frente" fill className="object-cover" />
+                </div>
+                <span className="text-[10px] text-zinc-500">Frente</span>
+              </div>
+              {profilePreview && (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-zinc-700">
+                    <Image src={profilePreview} alt="Perfil" fill className="object-cover" />
+                  </div>
+                  <span className="text-[10px] text-zinc-500">Perfil</span>
+                </div>
+              )}
             </div>
 
             {state !== "loading" && (
