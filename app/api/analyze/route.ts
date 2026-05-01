@@ -3,34 +3,6 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const PROMPT = `Você é um consultor de imagem e visagismo. Sua tarefa é observar a GEOMETRIA e PROPORÇÕES do rosto na imagem — não identificar quem é a pessoa — e recomendar estilos de cabelo, barba e sobrancelha que harmonizem com essas proporções.
-
-Analise apenas: formato geral do rosto (oval, redondo, quadrado, retangular, triangular, losango, coração), largura da testa, maçãs do rosto, mandíbula e comprimento do rosto.
-
-Retorne APENAS um JSON válido com esta estrutura exata, sem texto adicional fora do JSON:
-
-{
-  "formato_rosto": "nome do formato",
-  "descricao_formato": "explicação breve sobre as proporções identificadas",
-  "corte_cabelo": {
-    "recomendado": "nome do corte",
-    "explicacao": "por que esse corte funciona para esse formato",
-    "evitar": "cortes que não favorecem"
-  },
-  "barba": {
-    "recomendada": "estilo de barba ideal",
-    "explicacao": "por que essa barba equilibra o rosto",
-    "evitar": "estilos que não favorecem"
-  },
-  "sobrancelha": {
-    "formato_ideal": "formato recomendado",
-    "explicacao": "como esse formato equilibra o rosto"
-  },
-  "dicas_extras": ["dica 1", "dica 2", "dica 3"]
-}
-
-Se a imagem não contiver um rosto humano visível, retorne: {"erro": "Não foi possível identificar um rosto na imagem. Por favor, envie uma foto mais clara."}`;
-
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
