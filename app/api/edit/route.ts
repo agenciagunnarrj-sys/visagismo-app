@@ -21,25 +21,27 @@ function buildPrompt(active: EditRequest["active"], rec: EditRequest["recommenda
   const changes: string[] = [];
 
   if (active.cabelo) {
-    changes.push(`hair styled as "${rec.cabelo}" — cut and shape the hair to match this exact style`);
+    changes.push(`change the hairstyle to "${rec.cabelo}"`);
   }
   if (active.barba) {
-    changes.push(`beard styled as "${rec.barba}" — add or shape the beard to match this exact style`);
+    changes.push(`change the beard/makeup to "${rec.barba}"`);
   }
   if (active.sobrancelha) {
-    changes.push(`eyebrows shaped as "${rec.sobrancelha}" — reshape the eyebrows to match this exact shape`);
+    changes.push(`reshape the eyebrows to "${rec.sobrancelha}"`);
   }
 
   if (changes.length === 0) return "";
 
-  const changesList = changes.map((c, i) => `${i + 1}. Apply ${c}`).join(". ");
-
   return (
-    `Ultra-realistic photo edit of the exact same person in this image. ` +
-    `Preserve 100% of their identity: same face structure, skin tone, eye color, age, expression, background, and lighting. ` +
-    `Apply ONLY these specific changes: ${changesList}. ` +
-    `Do not alter anything else. The result must look like a real photograph, not AI-generated. ` +
-    `Photorealistic, high detail, natural lighting, same camera angle and framing.`
+    `Professional beauty salon photo retouching. This is the same person, same photo, same everything — only apply these specific beauty changes: ${changes.join(", ")}. ` +
+    `CRITICAL REQUIREMENTS: ` +
+    `- Keep the exact same face, skin tone, eye color, facial features, and bone structure ` +
+    `- Keep the exact same background, lighting, pose, and camera angle ` +
+    `- Keep the exact same clothing and accessories ` +
+    `- Only modify the specific hair/beard/eyebrow areas mentioned ` +
+    `- Result must be indistinguishable from a real photograph ` +
+    `- Ultra-high resolution, sharp details, natural shadows and highlights ` +
+    `- No cartoon, no painting, no AI artifacts — pure photorealism`
   );
 }
 
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
       image: imageFile,
       prompt,
       size: "1024x1024",
+      quality: "high",
     });
 
     const resultB64 = response.data?.[0]?.b64_json;
