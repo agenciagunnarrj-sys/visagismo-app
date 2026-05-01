@@ -5,6 +5,7 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  serverExternalPackages: ["openai"],
 };
 
 export default nextConfig;
