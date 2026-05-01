@@ -79,7 +79,7 @@ If no face is visible, return: {"erro": "Não foi possível identificar um rosto
           role: "user",
           content: [
             { type: "text", text: userPrompt },
-            { type: "image_url", image_url: { url: image, detail: "low" } },
+            { type: "image_url", image_url: { url: image, detail: "high" } },
           ],
         },
       ],
