@@ -26,14 +26,12 @@ function SlotUpload({
   label,
   hint,
   icon,
-  value,
   preview,
   onChange,
 }: {
   label: string;
   hint: string;
   icon: React.ReactNode;
-  value: string | null;
   preview: string | null;
   onChange: (base64: string, preview: string) => void;
 }) {
@@ -79,7 +77,8 @@ function SlotUpload({
 
       {preview ? (
         <>
-          <img src={preview} alt={label} className="w-24 h-24 rounded-xl object-cover border border-zinc-600" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={preview} alt={label} className="w-24 h-24 rounded-xl object-cover border border-zinc-600" />
           <p className="text-xs text-amber-400 font-medium">✓ {label}</p>
           <p className="text-[10px] text-zinc-500">Clique para trocar</p>
         </>
@@ -125,7 +124,6 @@ export default function UploadArea({ onImages }: UploadAreaProps) {
           label="Foto de Frente"
           hint="Rosto de frente, bem iluminado"
           icon={<FrontIcon />}
-          value={front}
           preview={frontPreview}
           onChange={handleFront}
         />
@@ -133,7 +131,6 @@ export default function UploadArea({ onImages }: UploadAreaProps) {
           label="Foto de Perfil"
           hint="Rosto de lado (esquerdo ou direito)"
           icon={<ProfileIcon />}
-          value={profile}
           preview={profilePreview}
           onChange={handleProfile}
         />

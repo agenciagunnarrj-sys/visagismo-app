@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import CompareSlider from "./CompareSlider";
 
 interface Recommendations {
   cabelo: string;
@@ -23,21 +23,20 @@ export default function VisualEditor({ originalImage, recommendations, gender }:
     { key: "barba" as const, label: gender === "feminino" ? "Maquiagem" : "Barba", icon: gender === "feminino" ? "💄" : "🧔" },
     { key: "sobrancelha" as const, label: "Sobrancelha", icon: "〰️" },
   ];
+
   const [active, setActive] = useState<ActiveMap>({ cabelo: true, barba: true, sobrancelha: true });
   const [loading, setLoading] = useState(false);
   const [editedImage, setEditedImage] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [generated, setGenerated] = useState(false);
+  const [retries, setRetries] = useState(0);
 
-  // Auto-generate on mount
   useEffect(() => {
     generate({ cabelo: true, barba: true, sobrancelha: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function generate(activeMap: ActiveMap) {
+  async function generate(activeMap: ActiveMap, attempt = 0) {
     setLoading(true);
-    setEditedImage(null);
     setError("");
 
     try {
@@ -48,23 +47,32 @@ export default function VisualEditor({ originalImage, recommendations, gender }:
       });
       const data = await res.json();
       if (data.erro) {
+        if (attempt < 2) {
+          setRetries(attempt + 1);
+          setTimeout(() => generate(activeMap, attempt + 1), 1500);
+          return;
+        }
         setError(data.erro);
       } else {
         setEditedImage(data.image);
-        setGenerated(true);
+        setRetries(0);
       }
     } catch {
+      if (attempt < 2) {
+        setTimeout(() => generate(activeMap, attempt + 1), 1500);
+        return;
+      }
       setError("Erro de conexão. Tente novamente.");
     } finally {
-      setLoading(false);
+      if (attempt >= 2 || !error) setLoading(false);
     }
   }
 
   function toggleChip(key: keyof ActiveMap) {
     const next = { ...active, [key]: !active[key] };
-    const anyActive = Object.values(next).some(Boolean);
-    if (!anyActive) return; // keep at least one
+    if (!Object.values(next).some(Boolean)) return;
     setActive(next);
+    setEditedImage(null);
     generate(next);
   }
 
@@ -76,7 +84,7 @@ export default function VisualEditor({ originalImage, recommendations, gender }:
         <h2 className="font-semibold text-zinc-100">Visualização Recomendada</h2>
       </div>
       <p className="text-xs text-zinc-500 mb-4 ml-9">
-        A IA aplicou o visual ideal para o seu formato de rosto. Desmarque para remover cada elemento.
+        Arraste o divisor para comparar. Desmarque chips para remover cada elemento.
       </p>
 
       {/* Chips */}
@@ -107,59 +115,42 @@ export default function VisualEditor({ originalImage, recommendations, gender }:
         ))}
       </div>
 
-      {/* Image comparison */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Original */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs text-zinc-500 text-center font-medium">Original</span>
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-zinc-800">
-            <Image src={originalImage} alt="Foto original" fill className="object-cover" />
+      {/* Image area */}
+      {loading && (
+        <div className="aspect-square rounded-xl bg-zinc-800 flex flex-col items-center justify-center gap-3">
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
           </div>
+          <p className="text-xs text-zinc-400 text-center px-4">
+            {retries > 0 ? `Tentativa ${retries + 1}... aguarde` : "Aplicando visual recomendado..."}
+          </p>
+          <p className="text-[10px] text-zinc-600">Imagem de alta qualidade — pode demorar até 30s</p>
         </div>
+      )}
 
-        {/* Result */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs text-zinc-500 text-center font-medium">
-            {loading ? "Gerando..." : generated ? "Com recomendações" : "Aguardando"}
-          </span>
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-zinc-800 flex items-center justify-center">
-            {loading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-900/80 backdrop-blur-sm z-10">
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-bounce"
-                      style={{ animationDelay: `${i * 0.15}s` }}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-zinc-400 text-center px-4">Aplicando visual recomendado...</p>
-              </div>
-            )}
+      {!loading && editedImage && (
+        <CompareSlider before={originalImage} after={editedImage} />
+      )}
 
-            {editedImage && (
-              <Image src={editedImage} alt="Foto editada" fill className="object-cover" />
-            )}
-
-            {!loading && !editedImage && !error && (
-              <p className="text-xs text-zinc-600 text-center px-4">Gerando visualização...</p>
-            )}
-
-            {!loading && error && (
-              <div className="flex flex-col items-center gap-2 px-4">
-                <p className="text-xs text-red-400 text-center">{error}</p>
-                <button
-                  onClick={() => generate(active)}
-                  className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            )}
-          </div>
+      {!loading && !editedImage && !error && (
+        <div className="aspect-square rounded-xl bg-zinc-800 flex items-center justify-center">
+          <p className="text-xs text-zinc-600">Gerando visualização...</p>
         </div>
-      </div>
+      )}
+
+      {!loading && error && (
+        <div className="aspect-square rounded-xl bg-zinc-800 flex flex-col items-center justify-center gap-3 px-6">
+          <p className="text-xs text-red-400 text-center">{error}</p>
+          <button
+            onClick={() => generate(active)}
+            className="text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 px-4 py-2 rounded-lg transition-colors"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {/* Download */}
       {editedImage && !loading && (
@@ -168,7 +159,7 @@ export default function VisualEditor({ originalImage, recommendations, gender }:
           download="visagismo-resultado.png"
           className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-500 hover:text-zinc-200 transition-colors"
         >
-          ↓ Baixar resultado
+          ↓ Baixar imagem editada
         </a>
       )}
     </div>
